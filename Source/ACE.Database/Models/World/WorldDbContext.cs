@@ -84,6 +84,8 @@ namespace ACE.Database.Models.World
                 {
                     builder.EnableRetryOnFailure(10);
                 });
+
+                optionsBuilder.EnableSensitiveDataLogging(true);
             }
         }
 
