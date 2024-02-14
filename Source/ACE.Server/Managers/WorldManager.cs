@@ -296,6 +296,13 @@ namespace ACE.Server.Managers
         /// </summary>
         public static void ThreadSafeTeleport(Player player, Position newPosition, IAction actionToFollowUpWith = null, bool fromPortal = false)
         {
+            if (newPosition == null)
+	        {
+		        log.Error(Environment.StackTrace);
+		        log.Error($"{player?.Name}.ThreadSafeTeleport() - null destination!");
+		        return;
+            }
+            
             EnqueueAction(new ActionEventDelegate(() =>
             {
                 player.Teleport(newPosition, fromPortal);
