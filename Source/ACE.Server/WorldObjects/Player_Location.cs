@@ -653,6 +653,13 @@ namespace ACE.Server.WorldObjects
         /// </summary>
         public void Teleport(Position _newPosition, bool fromPortal = false)
         {
+            if (_newPosition == null)
+            {
+		        log.Error(System.Environment.StackTrace);
+                log.Error($"{Name}.Teleport() - null destination!");
+                return;
+            }
+            
             var newPosition = new Position(_newPosition);
             //newPosition.PositionZ += 0.005f;
             newPosition.PositionZ += 0.005f * (ObjScale ?? 1.0f);
@@ -701,6 +708,9 @@ namespace ACE.Server.WorldObjects
 
             if (UnderLifestoneProtection)
                 LifestoneProtectionDispel();
+
+            if (newPosition == null)
+                return;
 
             HandlePreTeleportVisibility(newPosition);
 
