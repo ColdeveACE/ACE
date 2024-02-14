@@ -1717,6 +1717,9 @@ namespace ACE.Server.WorldObjects
 
             var targetVelocity = spell.IsTracking ? target.PhysicsObj.CachedVelocity : Vector3.Zero;
 
+            if (target is Player targetPlayer && targetPlayer.IsPKType && PropertyManager.GetBool("spellcast_accuracy").Item)
+                targetVelocity = targetPlayer.PhysicsObj.Velocity;
+
             var useGravity = spellType == ProjectileSpellType.Arc;
 
             var velocity = Vector3.Zero;
