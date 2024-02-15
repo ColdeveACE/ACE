@@ -620,9 +620,9 @@ namespace ACE.Server.WorldObjects
             if (player != null)
             {
                 if (corpse.PhysicsObj == null || corpse.PhysicsObj.Position == null)
-                    log.Debug($"[CORPSE] {Name}'s corpse (0x{corpse.Guid}) failed to spawn! Tried at {player.Location.ToLOCString()}");
+                    log.Error($"[CORPSE] {Name}'s corpse (0x{corpse.Guid}) failed to spawn! Tried at {player.Location.ToLOCString()}");
                 else
-                    log.Debug($"[CORPSE] {Name}'s corpse (0x{corpse.Guid}) is located at {corpse.PhysicsObj.Position}");
+                    log.Info($"[CORPSE] {Name}'s corpse (0x{corpse.Guid}) is located at {corpse.PhysicsObj.Position}");
             }
 
             if (saveCorpse)
