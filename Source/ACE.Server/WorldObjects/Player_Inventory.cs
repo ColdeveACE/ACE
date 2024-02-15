@@ -1081,7 +1081,7 @@ namespace ACE.Server.WorldObjects
 
                                 if (isFromAPlayerCorpse)
                                 {
-                                    log.Debug($"[CORPSE] {Name} (0x{Guid}) picked up {item.Name} (0x{item.Guid}) from {itemRootOwner.Name} (0x{itemRootOwner.Guid})");
+                                    log.Info($"[CORPSE] {Name} (0x{Guid}) picked up {item.Name} (0x{item.Guid}) from {itemRootOwner.Name} (0x{itemRootOwner.Guid})");
                                     item.SaveBiotaToDatabase();
                                 }
                             }
@@ -1604,7 +1604,7 @@ namespace ACE.Server.WorldObjects
 
                             if (isFromAPlayerCorpse)
                             {
-                                log.Debug($"[CORPSE] {Name} (0x{Guid}) picked up and wielded {item.Name} (0x{item.Guid}) from {rootOwner.Name} (0x{rootOwner.Guid})");
+                                log.Info($"[CORPSE] {Name} (0x{Guid}) picked up and wielded {item.Name} (0x{item.Guid}) from {rootOwner.Name} (0x{rootOwner.Guid})");
                                 item.SaveBiotaToDatabase();
                             }
                         }
@@ -3142,7 +3142,7 @@ namespace ACE.Server.WorldObjects
 
             if (isFromAPlayerCorpse)
             {
-                log.Debug($"[CORPSE] {Name} (0x{Guid}) merged {amount:N0} {(sourceStack.IsDestroyed ? $"which resulted in the destruction" : $"leaving behind {sourceStack.StackSize:N0}")} of {sourceStack.Name} (0x{sourceStack.Guid}) to {targetStack.Name} (0x{targetStack.Guid}) from {sourceStackRootOwner.Name} (0x{sourceStackRootOwner.Guid})");
+                log.Info($"[CORPSE] {Name} (0x{Guid}) merged {amount:N0} {(sourceStack.IsDestroyed ? $"which resulted in the destruction" : $"leaving behind {sourceStack.StackSize:N0}")} of {sourceStack.Name} (0x{sourceStack.Guid}) to {targetStack.Name} (0x{targetStack.Guid}) from {sourceStackRootOwner.Name} (0x{sourceStackRootOwner.Guid})");
                 targetStack.SaveBiotaToDatabase();
             }
 
