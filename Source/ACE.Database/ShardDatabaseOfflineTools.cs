@@ -131,7 +131,7 @@ namespace ACE.Database
             if (!string.IsNullOrWhiteSpace(reason))
                 message += $" Reason: {reason}.";
 
-            log.Debug(message);
+            log.Info(message);
 
             try
             {
@@ -246,7 +246,7 @@ namespace ACE.Database
             if (!string.IsNullOrWhiteSpace(reason))
                 message += $" Reason: {reason}.";
 
-            log.Debug(message);
+            log.Info(message);
 
             try
             {
@@ -302,7 +302,7 @@ namespace ACE.Database
                 if (!string.IsNullOrWhiteSpace(reason))
                     message += $" Reason: {reason}.";
 
-                log.Debug(message);
+                log.Info(message);
 
                 context.Biota.Remove(biota);
 
