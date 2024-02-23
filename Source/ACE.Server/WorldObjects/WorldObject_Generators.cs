@@ -25,7 +25,12 @@ namespace ACE.Server.WorldObjects
         /// (spawns other world objects)
         /// </summary>
         public bool IsGenerator { get => GeneratorProfiles != null && GeneratorProfiles.Count > 0; }
-       
+
+        /// <summary>
+        /// Is this WorldObject created from an Encounter, Set by Landblock
+        /// </summary>
+        public bool IsEncounter { get; set; }
+
         //public List<string> History = new List<string>();
 
         /// <summary>
@@ -308,7 +313,7 @@ namespace ACE.Server.WorldObjects
             if (numObjects == 0 && initCreate == 0)
                 log.Warn($"[GENERATOR] 0x{Guid}:{WeenieClassId} {Name}.GetSpawnObjectsForProfile(profile[{profile.LinkId}]): profile.InitCreate = {profile.InitCreate} | profile.MaxCreate = {profile.MaxCreate} | profile.WeenieClassId = {profile.WeenieClassId} | Profile Init invalid, cannot spawn.");
             else if (numObjects == 0)
-               log.Warn($"[GENERATOR] 0x{Guid}:{WeenieClassId} {Name}.GetSpawnObjectsForProfile(profile[{profile.LinkId}]): profile.InitCreate = {profile.InitCreate} | profile.MaxCreate = {profile.MaxCreate} | profile.WeenieClassId = {profile.WeenieClassId} | genSlotsAvailable = {genSlotsAvailable} | profileSlotsAvailable = {profileSlotsAvailable} | numObjects = {numObjects}, cannot spawn.");
+                log.Warn($"[GENERATOR] 0x{Guid}:{WeenieClassId} {Name}.GetSpawnObjectsForProfile(profile[{profile.LinkId}]): profile.InitCreate = {profile.InitCreate} | profile.MaxCreate = {profile.MaxCreate} | profile.WeenieClassId = {profile.WeenieClassId} | genSlotsAvailable = {genSlotsAvailable} | profileSlotsAvailable = {profileSlotsAvailable} | numObjects = {numObjects}, cannot spawn.");
 
             return numObjects;
         }
@@ -355,7 +360,7 @@ namespace ACE.Server.WorldObjects
                 case GeneratorTimeType.Day:
                     CheckTimeOfDayStatus();
                     break;
-            }            
+            }
         }
 
         /// <summary>
@@ -364,7 +369,7 @@ namespace ACE.Server.WorldObjects
         public void CheckTimeOfDayStatus()
         {
             var prevDisabled = GeneratorDisabled;
-           
+
             var isDay = Timers.CurrentInGameTime.IsDay;
             var isDayGenerator = GeneratorTimeType == GeneratorTimeType.Day;
 
@@ -656,6 +661,8 @@ namespace ACE.Server.WorldObjects
         {
             //Console.WriteLine($"{Name}.Generator_Generate({RegenerationInterval})");
 
+            CheckForStaleEncounters();
+
             if (!GeneratorDisabled)
             {
                 if (CurrentlyPoweringUp)
@@ -684,6 +691,8 @@ namespace ACE.Server.WorldObjects
 
             foreach (var profile in GeneratorProfiles)
                 profile.Spawn_HeartBeat();
+
+            //CheckForStaleEncounters();
         }
 
         public virtual void ResetGenerator()
@@ -702,6 +711,24 @@ namespace ACE.Server.WorldObjects
                     return profile.Id;
             }
             return null;
+        }
+
+        /// <summary>
+        /// If Generator has been marked an Encounter by Landblock, check for idle, stale profiles and reset them for long lived landblocks.
+        /// </summary>
+        public void CheckForStaleEncounters()
+        {
+            if (!IsEncounter) return;
+
+            var hasNonWorldObjects = 0;
+            var hasAwakeCreatures = 0;
+            var hasOpenContainers = 0;
+            var hasUnlockedChests = 0;
+
+            var idleStaleProfiles = GeneratorProfiles.Where(p => p.IsMaxed && (DateTime.UtcNow > p.StaleTime) && p.IsAbleToBeMarkedStale(ref hasNonWorldObjects, ref hasAwakeCreatures, ref hasOpenContainers, ref hasUnlockedChests));
+
+            foreach (var profile in idleStaleProfiles)
+                profile.Reset();
         }
     }
 }
