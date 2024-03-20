@@ -976,7 +976,7 @@ namespace ACE.Server.WorldObjects
                     
                     SetProperty(PropertyString.DestroyStackLog, loglineStackTrace);
                 }
-                log.Debug(logline);
+                log.Info(logline);
                 SaveBiotaToDatabase();
             }
         }
