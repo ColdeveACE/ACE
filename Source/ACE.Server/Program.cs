@@ -228,6 +228,14 @@ namespace ACE.Server
                 Environment.Exit(0);
             }
 
+            if (ConfigManager.Config.Metrics.EnableMetricsServer)
+            {
+                log.Info("Initializing Metrics Server...");
+                InitMetrics();
+            }
+            else
+                log.Info("Metrics Server Disabled...");
+
             log.Info("Initializing ServerManager...");
             ServerManager.Initialize();
 
@@ -344,6 +352,8 @@ namespace ACE.Server
 
         private static void OnProcessExit(object sender, EventArgs e)
         {
+            ShutdownMetrics();
+
             if (!IsRunningInContainer)
             {
                 if (!ServerManager.ShutdownInitiated)
