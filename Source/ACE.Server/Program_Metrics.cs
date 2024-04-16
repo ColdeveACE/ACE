@@ -137,9 +137,9 @@ namespace ACE.Server
             dotNetMetricsCollector = DotNetRuntimeStatsBuilder
                 .Customize()
                 .WithGcStats(CaptureLevel.Informational)
-                //.WithContentionStats()
-                //.WithThreadPoolStats()
-                //.WithExceptionStats()
+                .WithContentionStats()
+                .WithThreadPoolStats()
+                .WithExceptionStats()
                 .WithSocketStats()
                 .StartCollecting();
         }
