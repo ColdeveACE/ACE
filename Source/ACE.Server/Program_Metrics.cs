@@ -136,11 +136,12 @@ namespace ACE.Server
             // https://github.com/djluck/prometheus-net.DotNetRuntime
             dotNetMetricsCollector = DotNetRuntimeStatsBuilder
                 .Customize()
-                .WithGcStats(CaptureLevel.Informational)
-                //.WithContentionStats()
-                //.WithThreadPoolStats()
-                //.WithExceptionStats()
-                .WithSocketStats()
+                .WithGcStats(CaptureLevel.Verbose)
+                .WithJitStats(CaptureLevel.Verbose)
+                .WithContentionStats(CaptureLevel.Informational)
+                .WithThreadPoolStats(CaptureLevel.Informational)
+                .WithExceptionStats(CaptureLevel.Errors)
+                .WithSocketStats(CaptureLevel.Counters)
                 .StartCollecting();
         }
 
