@@ -46,36 +46,60 @@ namespace ACE.Server.Command.Handlers
             // This is formatted very similarly to GDL.
 
             var sb = new StringBuilder();
+            var sw = new Stopwatch();
 
+            sw.Restart();
             var proc = Process.GetCurrentProcess();
+            if (sw.ElapsedMilliseconds > 1000) sb.Append($"1 {sw.ElapsedMilliseconds}{'\n'}");
 
             sb.Append($"Server Status:{'\n'}");
 
             sb.Append($"Host Info: {Environment.OSVersion}, vCPU: {Environment.ProcessorCount}{'\n'}");
 
+            sw.Restart();
             ThreadPool.GetMinThreads(out var minWorkerThreads, out var minCompletionPortThreads);
+            if (sw.ElapsedMilliseconds > 1000) sb.Append($"2 {sw.ElapsedMilliseconds}{'\n'}");
+            sw.Restart();
             ThreadPool.GetMaxThreads(out var maxWorkerThreads, out var maxCompletionPortThreads);
+            if (sw.ElapsedMilliseconds > 1000) sb.Append($"3 {sw.ElapsedMilliseconds}{'\n'}");
+            sw.Restart();
             ThreadPool.GetAvailableThreads(out var availWorkerThreads, out var availCompletionPortThreads);
+            if (sw.ElapsedMilliseconds > 1000) sb.Append($"4 {sw.ElapsedMilliseconds}{'\n'}");
 
+            sw.Restart();
             sb.Append($"ThreadPool Min: {minWorkerThreads} {minCompletionPortThreads}, Max: {maxWorkerThreads} {maxCompletionPortThreads}, Avail: {availWorkerThreads} {availCompletionPortThreads}, Current: {ThreadPool.ThreadCount}{'\n'}");
+            if (sw.ElapsedMilliseconds > 1000) sb.Append($"5 {sw.ElapsedMilliseconds}{'\n'}");
 
+            sw.Restart();
             var runTime = DateTime.Now - proc.StartTime;
             sb.Append($"Server Runtime: {(int)runTime.TotalHours}h {runTime.Minutes}m {runTime.Seconds}s{'\n'}");
+            if (sw.ElapsedMilliseconds > 1000) sb.Append($"6 {sw.ElapsedMilliseconds}{'\n'}");
 
+            sw.Restart();
             sb.Append($"Total CPU Time: {(int)proc.TotalProcessorTime.TotalHours}h {proc.TotalProcessorTime.Minutes}m {proc.TotalProcessorTime.Seconds}s, Threads: {proc.Threads.Count}{'\n'}");
+            if (sw.ElapsedMilliseconds > 1000) sb.Append($"7 {sw.ElapsedMilliseconds}{'\n'}");
 
+            sw.Restart();
             // todo, add actual system memory used/avail
             sb.Append($"{(proc.PrivateMemorySize64 >> 20):N0} MB used{'\n'}");  // sb.Append($"{(proc.PrivateMemorySize64 >> 20)} MB used, xxxx / yyyy MB physical mem free.{'\n'}");
+            if (sw.ElapsedMilliseconds > 1000) sb.Append($"8 {sw.ElapsedMilliseconds}{'\n'}");
 
+            sw.Restart();
             sb.Append($"{NetworkManager.GetSessionCount():N0} connections, {NetworkManager.GetAuthenticatedSessionCount():N0} authenticated connections, {NetworkManager.GetUniqueSessionEndpointCount():N0} unique connections, {PlayerManager.GetOnlineCount():N0} players online{'\n'}");
+            if (sw.ElapsedMilliseconds > 1000) sb.Append($"9 {sw.ElapsedMilliseconds}{'\n'}");
+            sw.Restart();
             sb.Append($"Total Accounts Created: {DatabaseManager.Authentication.GetAccountCount():N0}, Total Characters Created: {(PlayerManager.GetOfflineCount() + PlayerManager.GetOnlineCount()):N0}{'\n'}");
+            if (sw.ElapsedMilliseconds > 1000) sb.Append($"10 {sw.ElapsedMilliseconds}{'\n'}");
 
             // 330 active objects, 1931 total objects(16777216 buckets.)
 
             // todo, expand this
+            sw.Restart();
             var loadedLandblocks = LandblockManager.GetLoadedLandblocks();
+            if (sw.ElapsedMilliseconds > 1000) sb.Append($"11 {sw.ElapsedMilliseconds}{'\n'}");
             int dormantLandblocks = 0, activeDungeonLandblocks = 0, dormantDungeonLandblocks = 0;
             int players = 0, creatures = 0, missiles = 0, other = 0, total = 0;
+            sw.Restart();
             foreach (var landblock in loadedLandblocks)
             {
                 if (landblock.IsDormant)
@@ -103,22 +127,37 @@ namespace ACE.Server.Command.Handlers
                     total++;
                 }
             }
+            if (sw.ElapsedMilliseconds > 1000) sb.Append($"12 {sw.ElapsedMilliseconds}{'\n'}");
+            sw.Restart();
+            if (sw.ElapsedMilliseconds > 1000) sb.Append($"13 {sw.ElapsedMilliseconds}{'\n'}");
             sb.Append($"Landblocks: {(loadedLandblocks.Count - dormantLandblocks):N0} active ({activeDungeonLandblocks:N0} dungeons), {dormantLandblocks:N0} dormant ({dormantDungeonLandblocks:N0} dungeons), Landblock Groups: {LandblockManager.LandblockGroupsCount:N0} - Players: {players:N0}, Creatures: {creatures:N0}, Missiles: {missiles:N0}, Other: {other:N0}, Total: {total:N0}.{'\n'}"); // 11 total blocks loaded. 11 active. 0 pending dormancy. 0 dormant. 314 unloaded.
             // 11 total blocks loaded. 11 active. 0 pending dormancy. 0 dormant. 314 unloaded.
 
+            sw.Restart();
             if (ServerPerformanceMonitor.IsRunning)
                 sb.Append($"Server Performance Monitor - UpdateGameWorld ~5m {ServerPerformanceMonitor.GetEventHistory5m(ServerPerformanceMonitor.MonitorType.UpdateGameWorld_Entire).AverageEventDuration:N3}, ~1h {ServerPerformanceMonitor.GetEventHistory1h(ServerPerformanceMonitor.MonitorType.UpdateGameWorld_Entire).AverageEventDuration:N3} s{'\n'}");
             else
                 sb.Append($"Server Performance Monitor - Not running. To start use /serverperformance start{'\n'}");
-
+            if (sw.ElapsedMilliseconds > 1000) sb.Append($"14 {sw.ElapsedMilliseconds}{'\n'}");
+            sw.Restart();
             sb.Append($"Threading - WorldThreadCount: {ConfigManager.Config.Server.Threading.LandblockManagerParallelOptions.MaxDegreeOfParallelism}, Multithread Physics: {ConfigManager.Config.Server.Threading.MultiThreadedLandblockGroupPhysicsTicking}, Multithread Non-Physics: {ConfigManager.Config.Server.Threading.MultiThreadedLandblockGroupTicking}, DatabaseThreadCount: {ConfigManager.Config.Server.Threading.DatabaseParallelOptions.MaxDegreeOfParallelism}{'\n'}");
+            if (sw.ElapsedMilliseconds > 1000) sb.Append($"15 {sw.ElapsedMilliseconds}{'\n'}");
 
+            sw.Restart();
             sb.Append($"Physics Cache Counts - BSPCache: {BSPCache.Count:N0}, GfxObjCache: {GfxObjCache.Count:N0}, PolygonCache: {PolygonCache.Count:N0}, VertexCache: {VertexCache.Count:N0}{'\n'}");
+            if (sw.ElapsedMilliseconds > 1000) sb.Append($"16 {sw.ElapsedMilliseconds}{'\n'}");
 
+            sw.Restart();
             sb.Append($"Total Server Objects: {ServerObjectManager.ServerObjects.Count:N0}{'\n'}");
+            if (sw.ElapsedMilliseconds > 1000) sb.Append($"17 {sw.ElapsedMilliseconds}{'\n'}");
 
+            sw.Restart();
             sb.Append($"World DB Cache Counts - Weenies: {DatabaseManager.World.GetWeenieCacheCount():N0}, LandblockInstances: {DatabaseManager.World.GetLandblockInstancesCacheCount():N0}, PointsOfInterest: {DatabaseManager.World.GetPointsOfInterestCacheCount():N0}, Cookbooks: {DatabaseManager.World.GetCookbookCacheCount():N0}, Spells: {DatabaseManager.World.GetSpellCacheCount():N0}, Encounters: {DatabaseManager.World.GetEncounterCacheCount():N0}, Events: {DatabaseManager.World.GetEventsCacheCount():N0}{'\n'}");
+            if (sw.ElapsedMilliseconds > 1000) sb.Append($"18 {sw.ElapsedMilliseconds}{'\n'}");
+            sw.Restart();
             sb.Append($"Shard DB Counts - Biotas: {DatabaseManager.Shard.BaseDatabase.GetBiotaCount():N0}{'\n'}");
+            if (sw.ElapsedMilliseconds > 1000) sb.Append($"19 {sw.ElapsedMilliseconds}{'\n'}");
+            sw.Restart();
             if (DatabaseManager.Shard.BaseDatabase is ShardDatabaseWithCaching shardDatabaseWithCaching)
             {
                 var biotaIds = shardDatabaseWithCaching.GetBiotaCacheKeys();
@@ -126,11 +165,18 @@ namespace ACE.Server.Command.Handlers
                 var nonPlayerBiotaIds = biotaIds.Count - playerBiotaIds;
                 sb.Append($"Shard DB Cache Counts - Player Biotas: {playerBiotaIds} ~ {shardDatabaseWithCaching.PlayerBiotaRetentionTime.TotalMinutes:N0} m, Non Players {nonPlayerBiotaIds} ~ {shardDatabaseWithCaching.NonPlayerBiotaRetentionTime.TotalMinutes:N0} m{'\n'}");
             }
+            if (sw.ElapsedMilliseconds > 1000) sb.Append($"20 {sw.ElapsedMilliseconds}{'\n'}");
 
+            sw.Restart();
             sb.Append(GuidManager.GetDynamicGuidDebugInfo() + '\n');
+            if (sw.ElapsedMilliseconds > 1000) sb.Append($"21 {sw.ElapsedMilliseconds}{'\n'}");
 
+            sw.Restart();
             sb.Append($"Portal.dat has {DatManager.PortalDat.FileCache.Count:N0} files cached of {DatManager.PortalDat.AllFiles.Count:N0} total{'\n'}");
+            if (sw.ElapsedMilliseconds > 1000) sb.Append($"22 {sw.ElapsedMilliseconds}{'\n'}");
+            sw.Restart();
             sb.Append($"Cell.dat has {DatManager.CellDat.FileCache.Count:N0} files cached of {DatManager.CellDat.AllFiles.Count:N0} total{'\n'}");
+            if (sw.ElapsedMilliseconds > 1000) sb.Append($"23 {sw.ElapsedMilliseconds}{'\n'}");
 
             CommandHandlerHelper.WriteOutputInfo(session, $"{sb}");
         }
