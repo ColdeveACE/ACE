@@ -32,6 +32,8 @@ namespace ACE.Database.Models.Auth
                 {
                     builder.EnableRetryOnFailure(10);
                 });
+
+                optionsBuilder.EnableSensitiveDataLogging(true);
             }
         }
 
