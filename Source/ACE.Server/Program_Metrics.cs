@@ -147,7 +147,7 @@ namespace ACE.Server
                 .WithJitStats(CaptureLevel.Verbose)
                 .WithContentionStats(CaptureLevel.Informational)
                 .WithThreadPoolStats(CaptureLevel.Informational)
-                .WithExceptionStats(CaptureLevel.Errors)
+                //.WithExceptionStats(CaptureLevel.Errors)
                 .WithSocketStats()
                 .StartCollecting();
         }
