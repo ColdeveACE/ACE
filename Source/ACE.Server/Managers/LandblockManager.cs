@@ -243,6 +243,7 @@ namespace ACE.Server.Managers
             public int NumberOfParalellHits;
             public int NumberOfLandblocksInThisThread;
             public TimeSpan TotalTickDuration;
+            public TimeSpan LongestTickedLandblockGroup;
         }
         public static ThreadLocal<ThreadTickInformation> TickPhysicsInformation = new ThreadLocal<ThreadTickInformation>(true);
         public static ThreadLocal<ThreadTickInformation> TickMultiThreadedWorkInformation = new ThreadLocal<ThreadTickInformation>(true);
@@ -294,7 +295,10 @@ namespace ACE.Server.Managers
             {
                 CurrentlyTickingLandblockGroupsMultiThreaded = true;
 
-                Parallel.ForEach(landblockGroups, ConfigManager.Config.Server.Threading.LandblockManagerParallelOptions, landblockGroup =>
+                var partitioner = Partitioner.Create(landblockGroups.OrderByDescending(r => r.LastTickPhysicsDuration), EnumerablePartitionerOptions.NoBuffering);
+
+                //Parallel.ForEach(landblockGroups, ConfigManager.Config.Server.Threading.LandblockManagerParallelOptions, landblockGroup =>
+                Parallel.ForEach(partitioner, ConfigManager.Config.Server.Threading.LandblockManagerParallelOptions, landblockGroup =>
                 {
                     CurrentMultiThreadedTickingLandblockGroup.Value = landblockGroup;
 
@@ -314,6 +318,9 @@ namespace ACE.Server.Managers
 
                     sw.Stop();
                     value.TotalTickDuration += sw.Elapsed;
+                    if (sw.Elapsed > value.LongestTickedLandblockGroup) value.LongestTickedLandblockGroup = sw.Elapsed;
+
+                    landblockGroup.LastTickPhysicsDuration = sw.Elapsed;
 
                     CurrentMultiThreadedTickingLandblockGroup.Value = null;
                 });
@@ -349,7 +356,10 @@ namespace ACE.Server.Managers
             {
                 CurrentlyTickingLandblockGroupsMultiThreaded = true;
 
-                Parallel.ForEach(landblockGroups, ConfigManager.Config.Server.Threading.LandblockManagerParallelOptions, landblockGroup =>
+                var partitioner = Partitioner.Create(landblockGroups.OrderByDescending(r => r.LastTickMultiThreadedWorkDuration), EnumerablePartitionerOptions.NoBuffering);
+
+                //Parallel.ForEach(landblockGroups, ConfigManager.Config.Server.Threading.LandblockManagerParallelOptions, landblockGroup =>
+                Parallel.ForEach(partitioner, ConfigManager.Config.Server.Threading.LandblockManagerParallelOptions, landblockGroup =>
                 {
                     CurrentMultiThreadedTickingLandblockGroup.Value = landblockGroup;
 
@@ -369,6 +379,9 @@ namespace ACE.Server.Managers
 
                     sw.Stop();
                     value.TotalTickDuration += sw.Elapsed;
+                    if (sw.Elapsed > value.LongestTickedLandblockGroup) value.LongestTickedLandblockGroup = sw.Elapsed;
+
+                    landblockGroup.LastTickMultiThreadedWorkDuration = sw.Elapsed;
 
                     CurrentMultiThreadedTickingLandblockGroup.Value = null;
                 });
