@@ -135,21 +135,21 @@ namespace ACE.Server
 
             // https://github.com/djluck/prometheus-net.DotNetRuntime
 
-            //dotNetMetricsCollector = DotNetRuntimeStatsBuilder
-            //    .Customize()
-            //    .WithGcStats(CaptureLevel.Informational)
-            //    .WithSocketStats()
-            //    .StartCollecting();
-
             dotNetMetricsCollector = DotNetRuntimeStatsBuilder
                 .Customize()
-                .WithGcStats(CaptureLevel.Verbose)
-                .WithJitStats(CaptureLevel.Verbose)
-                .WithContentionStats(CaptureLevel.Informational)
-                .WithThreadPoolStats(CaptureLevel.Informational)
-                //.WithExceptionStats(CaptureLevel.Errors)
+                .WithGcStats(CaptureLevel.Informational)
                 .WithSocketStats()
                 .StartCollecting();
+
+            //dotNetMetricsCollector = DotNetRuntimeStatsBuilder
+            //    .Customize()
+            //    .WithGcStats(CaptureLevel.Verbose)
+            //    .WithJitStats(CaptureLevel.Verbose)
+            //    .WithContentionStats(CaptureLevel.Informational)
+            //    .WithThreadPoolStats(CaptureLevel.Informational)
+            //    //.WithExceptionStats(CaptureLevel.Errors)
+            //    .WithSocketStats()
+            //    .StartCollecting();
         }
 
         static void ShutdownMetrics()
