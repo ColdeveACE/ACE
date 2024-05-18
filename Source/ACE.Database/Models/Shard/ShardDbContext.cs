@@ -70,6 +70,8 @@ namespace ACE.Database.Models.Shard
                 {
                     builder.EnableRetryOnFailure(10);
                 });
+
+                optionsBuilder.EnableSensitiveDataLogging(true);
             }
         }
 
