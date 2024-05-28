@@ -1,19 +1,20 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-using log4net;
-
 using ACE.Common;
+using ACE.Common.Performance;
 using ACE.Entity;
 using ACE.Entity.Enum;
 using ACE.Server.Entity;
 using ACE.Server.WorldObjects;
-using System.Diagnostics;
+
+using log4net;
 
 namespace ACE.Server.Managers
 {
@@ -61,15 +62,15 @@ namespace ACE.Server.Managers
 
         public static List<LandblockGroup> GetLoadedLandblockGroups()
         {
-                landblockLock.EnterReadLock();
-                try
-                {
-                    return landblockGroups.ToList();
-                }
-                finally
-                {
-                    landblockLock.ExitReadLock();
-                }
+            landblockLock.EnterReadLock();
+            try
+            {
+                return landblockGroups.ToList();
+            }
+            finally
+            {
+                landblockLock.ExitReadLock();
+            }
         }
 
         /// <summary>
@@ -215,9 +216,7 @@ namespace ACE.Server.Managers
                             if (landblockGroups[j].IsDungeon)
                                 continue;
 
-                            var distance = landblockGroups[j].ClosestLandblock(landblockGroupPendingAdditions[i]);
-
-                            if (distance < LandblockGroup.LandblockGroupMinSpacing)
+                            if (landblockGroups[j].ShouldBeAddedToThisLandblockGroup(landblockGroupPendingAdditions[i]))
                                 landblockGroupsIndexMatchesByDistance.Add(j);
                         }
 
@@ -263,6 +262,7 @@ namespace ACE.Server.Managers
             }
         }
 
+        // threaddebug start
         public class ThreadTickInformation
         {
             public int NumberOfParalellHits;
@@ -272,6 +272,7 @@ namespace ACE.Server.Managers
         }
         public static ThreadLocal<ThreadTickInformation> TickPhysicsInformation = new ThreadLocal<ThreadTickInformation>(true);
         public static ThreadLocal<ThreadTickInformation> TickMultiThreadedWorkInformation = new ThreadLocal<ThreadTickInformation>(true);
+        // threaddebug end
 
         public static void Tick(double portalYearTicks)
         {
@@ -307,6 +308,20 @@ namespace ACE.Server.Managers
         /// </summary>
         public static readonly ThreadLocal<LandblockGroup> CurrentMultiThreadedTickingLandblockGroup = new ThreadLocal<LandblockGroup>();
 
+        public static readonly RollingAmountOverTimeTracker TickPhysicsEfficiencyTracker = new RollingAmountOverTimeTracker(TimeSpan.FromMinutes(1));
+        public static readonly RollingAmountOverTimeTracker TickMultiThreadedWorkEfficiencyTracker = new RollingAmountOverTimeTracker(TimeSpan.FromMinutes(1));
+
+        public enum PartitionerOrders
+        {
+            AverageAmount,
+            LastAmount,
+            Sum,
+            Count,
+        }
+        public static PartitionerOrders PartitionerOrder = PartitionerOrders.Count;
+
+        public static EnumerablePartitionerOptions EnumerablePartitionerOptions = EnumerablePartitionerOptions.None;
+
         /// <summary>
         /// Processes physics objects in all active landblocks for updating
         /// </summary>
@@ -320,9 +335,19 @@ namespace ACE.Server.Managers
             {
                 CurrentlyTickingLandblockGroupsMultiThreaded = true;
 
-                var partitioner = Partitioner.Create(landblockGroups.OrderByDescending(r => r.TickPhysicsTracker.Elapsed));//, EnumerablePartitionerOptions.NoBuffering);
+                OrderablePartitioner<LandblockGroup> partitioner;
+                if (PartitionerOrder == PartitionerOrders.AverageAmount)
+                    partitioner = Partitioner.Create(landblockGroups.OrderByDescending(r => r.TickPhysicsTracker.AverageAmount), EnumerablePartitionerOptions);
+                else if (PartitionerOrder == PartitionerOrders.LastAmount)
+                    partitioner = Partitioner.Create(landblockGroups.OrderByDescending(r => r.TickPhysicsTracker.LastAmount), EnumerablePartitionerOptions);
+                else if (PartitionerOrder == PartitionerOrders.Sum)
+                    partitioner = Partitioner.Create(landblockGroups.OrderByDescending(r => r.TickPhysicsTracker.Sum), EnumerablePartitionerOptions);
+                else
+                    partitioner = Partitioner.Create(landblockGroups.OrderByDescending(r => r.Count), EnumerablePartitionerOptions);
 
-                //Parallel.ForEach(landblockGroups, ConfigManager.Config.Server.Threading.LandblockManagerParallelOptions, landblockGroup =>
+                var sw = new Stopwatch();
+                sw.Start();
+
                 Parallel.ForEach(partitioner, ConfigManager.Config.Server.Threading.LandblockManagerParallelOptions, landblockGroup =>
                 {
                     CurrentMultiThreadedTickingLandblockGroup.Value = landblockGroup;
@@ -335,20 +360,31 @@ namespace ACE.Server.Managers
                     }
                     value.NumberOfParalellHits++;
                     value.NumberOfLandblocksInThisThread += landblockGroup.Count;
-                    var sw = new Stopwatch();
-                    sw.Start();
+
+                    var swInner = new Stopwatch();
+                    swInner.Start();
 
                     foreach (var landblock in landblockGroup)
                         landblock.TickPhysics(portalYearTicks, movedObjects);
 
-                    sw.Stop();
-                    value.TotalTickDuration += sw.Elapsed;
-                    if (sw.Elapsed > value.LongestTickedLandblockGroup) value.LongestTickedLandblockGroup = sw.Elapsed;
+                    swInner.Stop();
+                    landblockGroup.TickPhysicsTracker.RegisterAmount(swInner.Elapsed.TotalSeconds);
 
-                    landblockGroup.TickPhysicsTracker.Add(sw.Elapsed);
+                    value.TotalTickDuration += swInner.Elapsed;
+                    if (swInner.Elapsed > value.LongestTickedLandblockGroup) value.LongestTickedLandblockGroup = swInner.Elapsed;
 
                     CurrentMultiThreadedTickingLandblockGroup.Value = null;
                 });
+
+                sw.Stop();
+                // Calculate Tick Efficiency
+                if (landblockGroups.Count > 0)
+                {
+                    var totalSecondsUsedInParallel = landblockGroups.Sum(r => r.TickPhysicsTracker.LastAmount);
+                    var totalThreadsUsed = Math.Min(landblockGroups.Count, ConfigManager.Config.Server.Threading.LandblockManagerParallelOptions.MaxDegreeOfParallelism);
+                    var efficiency = (totalSecondsUsedInParallel / (sw.Elapsed.TotalSeconds * totalThreadsUsed)) * 100;
+                    TickPhysicsEfficiencyTracker.RegisterAmount(efficiency);
+                }
 
                 CurrentlyTickingLandblockGroupsMultiThreaded = false;
             }
@@ -381,9 +417,19 @@ namespace ACE.Server.Managers
             {
                 CurrentlyTickingLandblockGroupsMultiThreaded = true;
 
-                var partitioner = Partitioner.Create(landblockGroups.OrderByDescending(r => r.TickMultiThreadedWorkTracker.Elapsed));//, EnumerablePartitionerOptions.NoBuffering);
+                OrderablePartitioner<LandblockGroup> partitioner;
+                if (PartitionerOrder == PartitionerOrders.AverageAmount)
+                    partitioner = Partitioner.Create(landblockGroups.OrderByDescending(r => r.TickMultiThreadedWorkTracker.AverageAmount), EnumerablePartitionerOptions);
+                else if (PartitionerOrder == PartitionerOrders.LastAmount)
+                    partitioner = Partitioner.Create(landblockGroups.OrderByDescending(r => r.TickMultiThreadedWorkTracker.LastAmount), EnumerablePartitionerOptions);
+                else if (PartitionerOrder == PartitionerOrders.Sum)
+                    partitioner = Partitioner.Create(landblockGroups.OrderByDescending(r => r.TickMultiThreadedWorkTracker.Sum), EnumerablePartitionerOptions);
+                else
+                    partitioner = Partitioner.Create(landblockGroups.OrderByDescending(r => r.Count), EnumerablePartitionerOptions);
 
-                //Parallel.ForEach(landblockGroups, ConfigManager.Config.Server.Threading.LandblockManagerParallelOptions, landblockGroup =>
+                var sw = new Stopwatch();
+                sw.Start();
+
                 Parallel.ForEach(partitioner, ConfigManager.Config.Server.Threading.LandblockManagerParallelOptions, landblockGroup =>
                 {
                     CurrentMultiThreadedTickingLandblockGroup.Value = landblockGroup;
@@ -396,20 +442,31 @@ namespace ACE.Server.Managers
                     }
                     value.NumberOfParalellHits++;
                     value.NumberOfLandblocksInThisThread += landblockGroup.Count;
-                    var sw = new Stopwatch();
-                    sw.Start();
+
+                    var swInner = new Stopwatch();
+                    swInner.Start();
 
                     foreach (var landblock in landblockGroup)
                         landblock.TickMultiThreadedWork(Time.GetUnixTime());
 
-                    sw.Stop();
-                    value.TotalTickDuration += sw.Elapsed;
-                    if (sw.Elapsed > value.LongestTickedLandblockGroup) value.LongestTickedLandblockGroup = sw.Elapsed;
+                    swInner.Stop();
+                    landblockGroup.TickMultiThreadedWorkTracker.RegisterAmount(swInner.Elapsed.TotalSeconds);
 
-                    landblockGroup.TickMultiThreadedWorkTracker.Add(sw.Elapsed);
+                    value.TotalTickDuration += swInner.Elapsed;
+                    if (swInner.Elapsed > value.LongestTickedLandblockGroup) value.LongestTickedLandblockGroup = swInner.Elapsed;
 
                     CurrentMultiThreadedTickingLandblockGroup.Value = null;
                 });
+
+                sw.Stop();
+                // Calculate Tick Efficiency
+                if (landblockGroups.Count > 0)
+                {
+                    var totalSecondsUsedInParallel = landblockGroups.Sum(r => r.TickMultiThreadedWorkTracker.LastAmount);
+                    var totalThreadsUsed = Math.Min(landblockGroups.Count, ConfigManager.Config.Server.Threading.LandblockManagerParallelOptions.MaxDegreeOfParallelism);
+                    var efficiency = (totalSecondsUsedInParallel / (sw.Elapsed.TotalSeconds * totalThreadsUsed)) * 100;
+                    TickMultiThreadedWorkEfficiencyTracker.RegisterAmount(efficiency);
+                }
 
                 CurrentlyTickingLandblockGroupsMultiThreaded = false;
             }
