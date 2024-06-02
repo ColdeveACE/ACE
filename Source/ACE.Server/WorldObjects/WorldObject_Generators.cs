@@ -648,6 +648,8 @@ namespace ACE.Server.WorldObjects
             }
         }
 
+        private const int genLoopAbort = 2000;
+        
         /// <summary>
         /// Called every [RegenerationInterval] seconds<para />
         /// Also called from EmoteManager, Chest.Reset(), WorldObject.OnGenerate()
@@ -667,9 +669,9 @@ namespace ACE.Server.WorldObjects
                         SelectAProfile();
                         genLoopCount++;
 
-                        if (genLoopCount > 1000)
+                        if (genLoopCount > genLoopAbort)
                         {
-                            log.Error($"[GENERATOR] 0x{Guid} {Name}.Generator_Generate(): genLoopCount > 1000, aborted init spawn. GenStopSelectProfileConditions: {GenStopSelectProfileConditions} | InitCreate: {InitCreate} | CurrentCreate: {CurrentCreate} | WCID: {WeenieClassId} - LOC: {Location.ToLOCString()}");
+                            log.Error($"[GENERATOR] 0x{Guid} {Name}.Generator_Generate(): genLoopCount > {genLoopAbort}, aborted init spawn. GenStopSelectProfileConditions: {GenStopSelectProfileConditions} | InitCreate: {InitCreate} | CurrentCreate: {CurrentCreate} | WCID: {WeenieClassId} - LOC: {Location.ToLOCString()}");
                             break;
                         }
                     }
