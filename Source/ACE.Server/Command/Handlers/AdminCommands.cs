@@ -893,7 +893,10 @@ namespace ACE.Server.Command.Handlers
             {
                 var teleportPOI = DatabaseManager.World.GetCachedPointOfInterest(poi);
                 if (teleportPOI == null)
+                {
+                    session.Network.EnqueueSend(new GameMessageSystemChat($"Location: \"{poi}\" not found. Use \"list\" to display all valid locations.", ChatMessageType.Broadcast));
                     return;
+                }
                 var weenie = DatabaseManager.World.GetCachedWeenie(teleportPOI.WeenieClassId);
                 var portalDest = new Position(weenie.GetPosition(PositionType.Destination));
                 WorldObject.AdjustDungeon(portalDest);
@@ -2850,6 +2853,18 @@ namespace ACE.Server.Command.Handlers
                             item.SendUpdatePosition(true);
                         }
                         item.Ethereal = ethereal;
+
+                        if (item.Ethereal == null)
+                        {
+                            var defaultPhysicsState = (PhysicsState)(item.GetProperty(PropertyInt.PhysicsState) ?? 0);
+
+                            if (defaultPhysicsState.HasFlag(PhysicsState.Ethereal))
+                                item.Ethereal = true;
+                            else
+                                item.Ethereal = false;
+                        }
+
+                        item.EnqueueBroadcastPhysicsState();
 
                         // drop success
                         player.Session.Network.EnqueueSend(
