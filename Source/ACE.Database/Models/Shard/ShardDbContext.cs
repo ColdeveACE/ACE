@@ -108,6 +108,8 @@ public partial class ShardDbContext : DbContext
             {
                 builder.EnableRetryOnFailure(10);
             });
+
+            optionsBuilder.EnableSensitiveDataLogging(true);
         }
     }
 
