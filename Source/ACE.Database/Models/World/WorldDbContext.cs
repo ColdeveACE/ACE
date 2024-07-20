@@ -136,6 +136,8 @@ public partial class WorldDbContext : DbContext
             {
                 builder.EnableRetryOnFailure(10);
             });
+
+            optionsBuilder.EnableSensitiveDataLogging(true);
         }
     }
 
