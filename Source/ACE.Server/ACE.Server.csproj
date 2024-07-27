@@ -15,6 +15,7 @@
     <ServerGarbageCollection>true</ServerGarbageCollection>
     <GarbageCollectionAdaptationMode>1</GarbageCollectionAdaptationMode>
     <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+    <RetainVMGarbageCollection>true</RetainVMGarbageCollection>
   </PropertyGroup>
 
   <PropertyGroup>
