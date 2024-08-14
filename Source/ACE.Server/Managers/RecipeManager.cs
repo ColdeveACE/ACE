@@ -1481,8 +1481,8 @@ namespace ACE.Server.Managers
 
         public static bool TryMutate(Player player, WorldObject source, WorldObject target, Recipe recipe, uint dataId, HashSet<uint> modified)
         {
-            if (useMutateNative)
-                return TryMutateNative(player, source, target, recipe, dataId);
+            //if (useMutateNative)
+                //return TryMutateNative(player, source, target, recipe, dataId);
 
             var numTimesTinkered = target.NumTimesTinkered;
 
