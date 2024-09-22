@@ -17,6 +17,13 @@
     <RetainVMGarbageCollection>true</RetainVMGarbageCollection>
   </PropertyGroup>
 
+  <ItemGroup>
+    <RuntimeHostConfigurationOption Include="System.GC.Server" Value="true" />
+    <RuntimeHostConfigurationOption Include="System.GC.Concurrent" Value="true" />
+    <RuntimeHostConfigurationOption Include="System.GC.RetainVM" Value="true" />
+    <RuntimeHostConfigurationOption Include="System.GC.DynamicAdaptationMode" Value="1" />
+  </ItemGroup>
+
   <PropertyGroup>
     <Authors>ACEmulator Contributors</Authors>
     <RepositoryType>git</RepositoryType>
