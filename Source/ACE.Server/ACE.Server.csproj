@@ -15,7 +15,15 @@
     <ServerGarbageCollection>true</ServerGarbageCollection>
     <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
     <RetainVMGarbageCollection>true</RetainVMGarbageCollection>
+    <GarbageCollectionAdaptationMode>1</GarbageCollectionAdaptationMode>
   </PropertyGroup>
+
+  <ItemGroup>
+    <RuntimeHostConfigurationOption Include="System.GC.Server" Value="true" />
+    <RuntimeHostConfigurationOption Include="System.GC.Concurrent" Value="true" />
+    <RuntimeHostConfigurationOption Include="System.GC.RetainVM" Value="true" />
+    <RuntimeHostConfigurationOption Include="System.GC.DynamicAdaptationMode" Value="1" />
+  </ItemGroup>
 
   <PropertyGroup>
     <Authors>ACEmulator Contributors</Authors>
