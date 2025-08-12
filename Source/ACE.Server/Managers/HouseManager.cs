@@ -648,7 +648,7 @@ namespace ACE.Server.Managers
             }
 
             if (player.HouseInstance == null)
-                return;     
+                return;
 
             var playerHouse = FindPlayerHouse(playerGuid);
             if (playerHouse == null)
